@@ -1,127 +1,2052 @@
----
-title: Expo SDK reference
-description: Access device and system functionality in your Expo and React Native apps using Expo SDK packages.
-hideTOC: true
----
-
-import { BookOpen02Icon } from '@expo/styleguide-icons/outline/BookOpen02Icon';
-import { CodeSquare01Icon } from '@expo/styleguide-icons/outline/CodeSquare01Icon';
-
-import { BoxLink } from '~/ui/components/BoxLink';
-import { Collapsible } from '~/ui/components/Collapsible';
-import RedirectNotification from '~/ui/components/RedirectNotification';
+import { useState, useEffect } from 'react';
 import {
-  AndroidIOSCompatibilityTable,
-  ReactNativeCompatibilityTable,
-} from '~/ui/components/SDKTables';
-import { Terminal } from '~/ui/components/Snippet';
-import { CODE } from '~/ui/components/Text';
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+} from 'react-native';
 
-<RedirectNotification>
-  The page you are looking for does not exist in this SDK version. It may have been deprecated or
-  added to a newer SDK version.
-</RedirectNotification>
+const benches = [
+  { id: 1, name: 'Ławka SIADAJ #001', free: 8, x: 18, y: 20 },
+  { id: 2, name: 'Ławka SIADAJ #002', free: 5, x: 65, y: 18 },
+  { id: 3, name: 'Ławka SIADAJ #003', free: 2, x: 35, y: 42 },
+  { id: 4, name: 'Ławka SIADAJ #004', free: 7, x: 78, y: 50 },
+  { id: 5, name: 'Ławka SIADAJ #005', free: 3, x: 15, y: 68 },
+  { id: 6, name: 'Ławka SIADAJ #006', free: 10, x: 62, y: 75 },
+];
 
-The Expo SDK is a collection of packages that provide access to device and system functionality such as camera, contacts, location, sensors, haptics, and more. Each package targets a specific feature and can be used independently. All packages work in any React Native app with the `expo` package installed.
+const helpCategories = [
+  {
+    id: 'animals',
+    name: 'Schroniska',
+    emoji: '🐕',
+    percentage: 47.8,
+  },
+  {
+    id: 'hospitals',
+    name: 'Szpitale',
+    emoji: '🏥',
+    percentage: 28.4,
+  },
+  {
+    id: 'children',
+    name: 'Domy dziecka',
+    emoji: '🧸',
+    percentage: 15.7,
+  },
+  {
+    id: 'seniors',
+    name: 'Domy seniora',
+    emoji: '👵',
+    percentage: 8.1,
+  },
+];
 
-You can install any Expo SDK package using the [`npx expo install`](/more/expo-cli/#install) command. For example, three different packages are installed using the following command:
+const previousHelp = [
+  {
+    month: 'Wrzesień 2026',
+    cause: 'Schroniska',
+    emoji: '🐕',
+    amount: '290 575 zł',
+  },
+  {
+    month: 'Sierpień 2026',
+    cause: 'Szpitale',
+    emoji: '🏥',
+    amount: '184 320 zł',
+  },
+  {
+    month: 'Lipiec 2026',
+    cause: 'Domy dziecka',
+    emoji: '🧸',
+    amount: '126 840 zł',
+  },
+];
 
-<Terminal cmd={['$ npx expo install expo-camera expo-contacts expo-sensors']} />
-
-After installing one or more packages, you can import them into your JavaScript code:
-
-```ts
-import { CameraView } from 'expo-camera';
-import { Contact } from 'expo-contacts';
-import { Gyroscope } from 'expo-sensors';
-```
-
-This allows you to write [`Contact.getAll()`](./sdk/contacts#getalloptions) and read the contacts from the device, read the gyroscope sensor to detect device movement, or start the phone's camera and take photos.
-
-## All Expo SDK packages work in any React Native app
-
-Expo apps are React Native apps, so all Expo SDK packages work in any React Native app with the `expo` package installed and configured. The easiest way to create a React Native app with support for Expo SDK packages is to use `create-expo-app`. However, you can also add Expo SDK support to an existing React Native app with the `npx install-expo-modules` command.
-
-<Terminal
-  cmd={['# Create a project named my-app', '$ npx create-expo-app my-app --template bare-minimum']}
-  cmdCopy="npx create-expo-app my-app --template bare-minimum"
-/>
-
-<BoxLink
-  title="Install Expo SDK packages in existing React Native apps"
-  href="/bare/installing-expo-modules"
-  description={
-    <>
-      Learn more about configuring projects created with{' '}
-      <CODE>npx @react-native-community/cli@latest init</CODE> to Expo SDK packages.
-    </>
+function getBenchColor(free) {
+  if (free >= 6) {
+    return '#7BC96F';
   }
-  Icon={BookOpen02Icon}
-/>
 
-<BoxLink
-  title="Use libraries"
-  description="Learn how to install Expo SDK packages in your project."
-  href="/workflow/using-libraries"
-  Icon={CodeSquare01Icon}
-/>
+  if (free >= 3) {
+    return '#F4B942';
+  }
 
-## Using pre-release versions
+  return '#E76F51';
+}
 
-New Expo SDK versions are released three times each year. Between these releases, we publish pre-release versions of the `expo` package and all of the Expo SDK packages. Pre-releases are not considered stable and should only be used if you are comfortable with the risk of encountering bugs or other issues.
+export default function App() {
+  const [screen, setScreen] = useState('home');
 
-### Canary releases
+  const [selectedBench, setSelectedBench] = useState(null);
+  const [selectedSeat, setSelectedSeat] = useState(null);
 
-Canary releases represent a snapshot of the state of the `main` branch at the time they are published. Canary package versions include `-canary` in the name, along with the date and commit hash, such as `57.0.0-canary-20260526-13e89ca`. To install the latest canary release:
+  const [amount, setAmount] = useState('');
+  const [paymentError, setPaymentError] = useState('');
 
-<Terminal
-  cmd={[
-    '# Install the alpha version of expo and its related packages',
-    '$ npm install expo@canary && npx expo install --fix',
-  ]}
-  cmdCopy="npm install expo@canary && npx expo install --fix"
-/>
+  const [selectedPayment, setSelectedPayment] = useState(null);
 
-You can often use pre-release versions of individual packages with stable releases of the Expo SDK. There may occasionally be incompatibilities or other issues that arise in canary-quality releases. You may want to [silence dependency validation warnings](/more/expo-cli/#configuring-dependency-validation) if you opt in to the canary package and once you have verified that it works well for your use cases.
+  const [totalPaid, setTotalPaid] = useState(37);
+  const [sitCount, setSitCount] = useState(6);
 
-### Beta releases
+  const [activeSeat, setActiveSeat] = useState(null);
+  const [leaving, setLeaving] = useState(false);
+  const [countdown, setCountdown] = useState(10);
 
-Before each Expo SDK release, we publish beta versions of the `expo` package and all of the Expo SDK packages. Beta releases are considered much more stable than canary releases, and we encourage developers to try them out on their apps and share their feedback. Beta releases use the `beta` tag on npm and follow the instructions in the related [changelog](https://expo.dev/changelog) post.
+  const [voted, setVoted] = useState(false);
+  const [selectedVote, setSelectedVote] = useState(null);
 
-## Each Expo SDK version depends on a React Native version
+  const [poolAmount, setPoolAmount] = useState(581150);
 
-<ReactNativeCompatibilityTable />
+  const [customAmount, setCustomAmount] = useState('');
 
-### Additional information
+  useEffect(() => {
+    if (!leaving) {
+      return;
+    }
 
-<Collapsible summary="Expo SDK policy for tracking React Native releases">
+    if (countdown <= 0) {
+      setLeaving(false);
+      setCountdown(10);
+      setActiveSeat(null);
+      setSelectedSeat(null);
+      setScreen('home');
+      return;
+    }
 
-- Each Expo SDK release targets a single React Native version. This is typically the latest stable version at the time of the release.
-- React Native currently has six releases per year and aims for every release to include no breaking changes.
-- Expo SDK releases aim to follow this cadence.
-- Pre-release versions of the upcoming Expo SDK will include support for the latest version of React Native quickly, usually the same day it is released. A member of the Expo SDK team works on the React Native releases team for each release, and is responsible for continuously updating the React Native version in the Expo repository, verifying compatibility, and reporting regressions back to the React Native team.
+    const timer = setTimeout(() => {
+      setCountdown((value) => value - 1);
+    }, 1000);
 
-</Collapsible>
+    return () => clearTimeout(timer);
+  }, [leaving, countdown]);
 
-<Collapsible summary="What if I need a change from the latest React Native version and it's not yet in an Expo SDK release?"
->
-Expo engineers on the React Native releases team ensure that any urgent fixes are included in the React Native version used by the latest Expo SDK. If your specific fix won't be cherrypicked into an existing release, perhaps because it is not considered critical or because it involves a breaking change, then you have two options:
+  const openBench = (bench) => {
+    setSelectedBench(bench);
+    setSelectedSeat(null);
+    setScreen('bench');
+  };
 
-1. Use [`patch-package`](https://github.com/ds300/patch-package) to pull in the fix.
-2. Use a [pre-release version of the Expo SDK](#using-pre-release-versions).
+  const seats = selectedBench
+    ? Array.from({ length: 10 }, (_, index) => ({
+        id: index + 1,
+        occupied:
+          index >= selectedBench.free ||
+          (
+            activeSeat &&
+            activeSeat.benchId === selectedBench.id &&
+            activeSeat.seatId === index + 1
+          ),
+      }))
+    : [];
 
-</Collapsible>
+  const handleAmountChange = (text) => {
+    let cleaned = text.replace(/[^0-9,.]/g, '');
 
-<Collapsible summary="Can I use an older version of React Native with the latest Expo SDK?">
+    cleaned = cleaned.replace('.', ',');
 
-Packages in the Expo SDK are intended to support the target React Native version for that SDK. Typically, they will not support older versions of React Native, but they may. When a new version of React Native is released, the latest versions of the Expo SDK packages are typically updated to support it. However, this may take weeks or more, depending on the extent of the changes in the release.
+    const parts = cleaned.split(',');
 
-</Collapsible>
+    if (parts.length > 2) {
+      cleaned =
+        parts[0] +
+        ',' +
+        parts.slice(1).join('');
+    }
 
-## Support for Android and iOS versions
+    if (parts.length === 2) {
+      cleaned =
+        parts[0] +
+        ',' +
+        parts[1].slice(0, 2);
+    }
 
-Each version of Expo SDK supports a minimum OS version of Android and iOS. For Android, the `compileSdkVersion` is defined which tells the [Gradle](https://developer.android.com/studio/build) which Android SDK version to use to compile the app. This also means that you can use the Android API features included in that SDK version and from the previous versions. For iOS, the [Xcode](https://developer.apple.com/news/upcoming-requirements/) tells the minimum Xcode SDK version to use to compile the app.
+    setCustomAmount(cleaned);
+    setPaymentError('');
+  };
 
-<AndroidIOSCompatibilityTable />
+  const choosePayment = (value) => {
+    setSelectedPayment(value);
+    setCustomAmount('');
+    setPaymentError('');
+  };
 
-When deciding whether to upgrade your Expo SDK version, consider both Expo's SDK version and app store submission requirements, as described in the above table. Google Play Store and Apple App Store periodically increase their minimum required OS versions and API levels, which are required for new app submissions. Expo has no control over the app store requirements, and you should check [Google](https://developer.android.com/studio/build) and [Apple](https://developer.apple.com/news/upcoming-requirements/) for the current store submission requirements.
+  const getFinalAmount = () => {
+    if (selectedPayment === 'custom') {
+      return parseFloat(
+        customAmount.replace(',', '.')
+      );
+    }
+
+    return selectedPayment;
+  };
+
+  const handlePayment = () => {
+    const finalAmount = getFinalAmount();
+
+    if (!finalAmount || isNaN(finalAmount)) {
+      setPaymentError('Wybierz kwotę płatności.');
+      return;
+    }
+
+    if (finalAmount < 1) {
+      setPaymentError(
+        'Kwota poniżej minimalnej płatności 1 zł.'
+      );
+      return;
+    }
+
+    setPaymentError('');
+
+    setTotalPaid((value) => value + finalAmount);
+    setPoolAmount((value) => value + finalAmount / 2);
+    setSitCount((value) => value + 1);
+
+    setActiveSeat({
+      benchId: selectedBench.id,
+      seatId: selectedSeat,
+      amount: finalAmount,
+    });
+
+    setScreen('success');
+  };
+
+  const startLeaving = () => {
+    setLeaving(true);
+    setCountdown(10);
+  };
+
+  const cancelLeaving = () => {
+    setLeaving(false);
+    setCountdown(10);
+  };
+
+  const submitVote = () => {
+    if (!selectedVote) {
+      return;
+    }
+
+    setVoted(true);
+  };
+
+  /*
+   * =========================
+   * EKRAN AKTYWNEGO MIEJSCA
+   * =========================
+   */
+
+  if (screen === 'active') {
+    return (
+      <View style={styles.centerScreen}>
+        <Text style={styles.activeEmoji}>
+          🪑
+        </Text>
+
+        <Text style={styles.successTitle}>
+          MIEJSCE ZAJĘTE
+        </Text>
+
+        <Text style={styles.successText}>
+          Ławka #{activeSeat?.benchId}
+        </Text>
+
+        <Text style={styles.bigSeat}>
+          Miejsce {activeSeat?.seatId}
+        </Text>
+
+        <View style={styles.activeBox}>
+          <Text style={styles.activeBoxTitle}>
+            Ciesz się chwilą 💚
+          </Text>
+
+          <Text style={styles.activeBoxText}>
+            Możesz siedzieć tak długo, jak chcesz.
+          </Text>
+
+          <Text style={styles.activeBoxText}>
+            Po opuszczeniu miejsca wybierz
+            „OPUŚCIŁAM MIEJSCE”.
+          </Text>
+        </View>
+
+        {!leaving ? (
+          <TouchableOpacity
+            style={styles.leaveButton}
+            onPress={startLeaving}
+          >
+            <Text style={styles.leaveButtonText}>
+              OPUŚCIŁAM MIEJSCE
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.countdownBox}>
+            <Text style={styles.countdownNumber}>
+              {countdown}
+            </Text>
+
+            <Text style={styles.countdownText}>
+              Ławka zamknie się za {countdown} sekund
+            </Text>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={cancelLeaving}
+            >
+              <Text style={styles.cancelButtonText}>
+                WRÓCIŁAM
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  /*
+   * =========================
+   * EKRAN SUKCESU
+   * =========================
+   */
+
+  if (screen === 'success') {
+    return (
+      <View style={styles.centerScreen}>
+        <Text style={styles.successEmoji}>
+          🪑❤️
+        </Text>
+
+        <Text style={styles.successTitle}>
+          DZIĘKUJEMY!
+        </Text>
+
+        <Text style={styles.successText}>
+          Miejsce {selectedSeat} jest teraz Twoje.
+        </Text>
+
+        <Text style={styles.successText}>
+          Wpłacono{' '}
+          {getFinalAmount()
+            ?.toFixed(2)
+            .replace('.', ',')}{' '}
+          zł.
+        </Text>
+
+        <View style={styles.splitBox}>
+          <Text style={styles.splitTitle}>
+            Twoja wpłata
+          </Text>
+
+          <Text style={styles.splitText}>
+            💚 50% → rozwój SIADAJ
+          </Text>
+
+          <Text style={styles.splitText}>
+            ❤️ 50% → miesięczna pomoc
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setScreen('active')}
+        >
+          <Text style={styles.buttonText}>
+            USIĄDŹ 🪑
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  /*
+   * =========================
+   * PŁATNOŚĆ
+   * =========================
+   */
+
+  if (screen === 'payment') {
+    return (
+      <View style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.topBack}
+            onPress={() => setScreen('bench')}
+          >
+            ← WRÓĆ
+          </Text>
+
+          <Text style={styles.title}>
+            Wybierz kwotę
+          </Text>
+
+          <Text style={styles.paymentInfo}>
+            Miejsce {selectedSeat}
+          </Text>
+
+          <Text style={styles.minimumInfo}>
+            Minimalna płatność: 1 zł
+          </Text>
+
+          <View style={styles.paymentGrid}>
+            {[1, 2, 5, 10].map((value) => (
+              <TouchableOpacity
+                key={value}
+                style={[
+                  styles.paymentTile,
+                  selectedPayment === value &&
+                    styles.paymentTileSelected,
+                ]}
+                onPress={() => choosePayment(value)}
+              >
+                <Text
+                  style={[
+                    styles.paymentTileNumber,
+                    selectedPayment === value &&
+                      styles.paymentTileNumberSelected,
+                  ]}
+                >
+                  {value} zł
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.customTile,
+              selectedPayment === 'custom' &&
+                styles.paymentTileSelected,
+            ]}
+            onPress={() => choosePayment('custom')}
+          >
+            <Text style={styles.customTileText}>
+              ✏️ WŁASNA KWOTA
+            </Text>
+          </TouchableOpacity>
+
+          {selectedPayment === 'custom' && (
+            <View style={styles.amountContainer}>
+              <TextInput
+                style={styles.amountInput}
+                value={customAmount}
+                onChangeText={handleAmountChange}
+                placeholder="np. 7,50"
+                placeholderTextColor="#999999"
+                keyboardType="decimal-pad"
+                maxLength={10}
+                autoFocus
+              />
+
+              <Text style={styles.currency}>
+                zł
+              </Text>
+            </View>
+          )}
+
+          {selectedPayment && (
+            <View style={styles.chosenAmountBox}>
+              <Text style={styles.chosenAmountLabel}>
+                Wybrana kwota
+              </Text>
+
+              <Text style={styles.chosenAmount}>
+                {selectedPayment === 'custom'
+                  ? customAmount || '0,00'
+                  : selectedPayment.toFixed(2).replace('.', ',')}{' '}
+                zł
+              </Text>
+            </View>
+          )}
+
+          {paymentError !== '' && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>
+                ⚠️ {paymentError}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.smallInfoBox}>
+            <Text style={styles.smallInfo}>
+              💚 50% wpłaty wspiera rozwój SIADAJ
+              {'\n'}
+              ❤️ 50% trafia do miesięcznej puli pomocy
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.payButton,
+              !selectedPayment &&
+                styles.disabledButton,
+            ]}
+            onPress={handlePayment}
+          >
+            <Text style={styles.payButtonText}>
+              ZAPŁAĆ
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  /*
+   * =========================
+   * ŁAWKA
+   * =========================
+   */
+
+  if (screen === 'bench' && selectedBench) {
+    return (
+      <View style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <TouchableOpacity
+            onPress={() => setScreen('map')}
+          >
+            <Text style={styles.topBack}>
+              ← MAPA
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.title}>
+            🪑 {selectedBench.name}
+          </Text>
+
+          <Text style={styles.availability}>
+            <Text style={styles.greenText}>
+              {selectedBench.free} wolnych
+            </Text>
+            {'  •  '}
+            <Text style={styles.redText}>
+              {10 - selectedBench.free} zajętych
+            </Text>
+          </Text>
+
+          <Text style={styles.chooseText}>
+            Wybierz miejsce
+          </Text>
+
+          <View style={styles.seatsContainer}>
+            {seats.map((seat) => (
+              <TouchableOpacity
+                key={seat.id}
+                disabled={seat.occupied}
+                onPress={() =>
+                  setSelectedSeat(seat.id)
+                }
+                style={[
+                  styles.seat,
+                  seat.occupied &&
+                    styles.occupiedSeat,
+                  selectedSeat === seat.id &&
+                    styles.selectedSeat,
+                ]}
+              >
+                <Text style={styles.seatNumber}>
+                  {seat.id}
+                </Text>
+
+                <Text style={styles.seatStatus}>
+                  {seat.occupied
+                    ? 'ZAJĘTE'
+                    : 'WOLNE'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {selectedSeat && (
+            <View style={styles.selectionBox}>
+              <Text style={styles.selectionText}>
+                Miejsce {selectedSeat}
+              </Text>
+
+              <Text style={styles.priceText}>
+                Wybierz kwotę, którą chcesz wpłacić
+              </Text>
+
+              <TouchableOpacity
+                style={styles.payButton}
+                onPress={() => {
+                  setSelectedPayment(null);
+                  setCustomAmount('');
+                  setPaymentError('');
+                  setScreen('payment');
+                }}
+              >
+                <Text style={styles.payButtonText}>
+                  PRZEJDŹ DO PŁATNOŚCI
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  /*
+   * =========================
+   * POMAGAMY
+   * =========================
+   */
+
+  if (screen === 'help') {
+    return (
+      <View style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.title}>
+            ❤️ Pomagamy
+          </Text>
+
+          <Text style={styles.sectionSubtitle}>
+            Twoje wpłaty zamieniają się w realną pomoc.
+          </Text>
+
+          <View style={styles.poolCard}>
+            <Text style={styles.poolSmall}>
+              AKTUALNA PULA POMOCY
+            </Text>
+
+            <Text style={styles.poolAmount}>
+              {poolAmount.toLocaleString('pl-PL')}{' '}
+              zł
+            </Text>
+
+            <Text style={styles.poolDescription}>
+              Zebrane w tym miesiącu
+            </Text>
+          </View>
+
+          <Text style={styles.sectionTitle}>
+            🗳️ Głosowanie
+          </Text>
+
+          {!voted ? (
+            <>
+              <Text style={styles.voteDescription}>
+                Wybierz, gdzie powinna trafić
+                miesięczna pula.
+              </Text>
+
+              {helpCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  onPress={() =>
+                    setSelectedVote(category.id)
+                  }
+                  style={[
+                    styles.voteCard,
+                    selectedVote === category.id &&
+                      styles.voteCardSelected,
+                  ]}
+                >
+                  <Text style={styles.voteEmoji}>
+                    {category.emoji}
+                  </Text>
+
+                  <View style={styles.voteContent}>
+                    <Text style={styles.voteName}>
+                      {category.name}
+                    </Text>
+
+                    <Text style={styles.votePercentage}>
+                      Obecnie {category.percentage}%
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.radio,
+                      selectedVote === category.id &&
+                        styles.radioSelected,
+                    ]}
+                  />
+                </TouchableOpacity>
+              ))}
+
+              <TouchableOpacity
+                style={[
+                  styles.voteButton,
+                  !selectedVote &&
+                    styles.disabledButton,
+                ]}
+                onPress={submitVote}
+              >
+                <Text style={styles.voteButtonText}>
+                  ODDAJ GŁOS
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.votedBox}>
+              <Text style={styles.votedEmoji}>
+                ❤️
+              </Text>
+
+              <Text style={styles.votedTitle}>
+                GŁOS ZAPISANY
+              </Text>
+
+              <Text style={styles.votedText}>
+                Twój głos został dodany do
+                miesięcznego głosowania.
+              </Text>
+
+              <Text style={styles.votedText}>
+                Wyniki zostaną podsumowane pod
+                koniec miesiąca.
+              </Text>
+            </View>
+          )}
+
+          <Text style={styles.sectionTitle}>
+            📜 Historia pomocy
+          </Text>
+
+          {previousHelp.map((item) => (
+            <View
+              key={item.month}
+              style={styles.historyCard}
+            >
+              <Text style={styles.historyEmoji}>
+                {item.emoji}
+              </Text>
+
+              <View style={styles.historyContent}>
+                <Text style={styles.historyMonth}>
+                  {item.month}
+                </Text>
+
+                <Text style={styles.historyCause}>
+                  Cel: {item.cause}
+                </Text>
+
+                <Text style={styles.historyAmount}>
+                  Przekazano: {item.amount}
+                </Text>
+              </View>
+            </View>
+          ))}
+
+          <View style={styles.transparencyBox}>
+            <Text style={styles.transparencyTitle}>
+              🔎 Pełna przejrzystość
+            </Text>
+
+            <Text style={styles.transparencyText}>
+              Po zakończeniu każdego miesiąca
+              pokazujemy zebrany wynik, zwycięski
+              cel oraz przekazaną kwotę.
+            </Text>
+
+            <Text style={styles.transparencyText}>
+              Transfer środków następuje około
+              10. dnia kolejnego miesiąca.
+            </Text>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  /*
+   * =========================
+   * PROFIL
+   * =========================
+   */
+
+  if (screen === 'profile') {
+    return (
+      <View style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.profileIcon}>
+            👤
+          </Text>
+
+          <Text style={styles.title}>
+            Twój profil
+          </Text>
+
+          <Text style={styles.profileSubtitle}>
+            Użytkownik SIADAJ
+          </Text>
+
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {sitCount}
+              </Text>
+
+              <Text style={styles.statLabel}>
+                skorzystań
+              </Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {totalPaid.toFixed(2).replace('.', ',')} zł
+              </Text>
+
+              <Text style={styles.statLabel}>
+                wpłat
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.profileCard}>
+            <Text style={styles.profileCardTitle}>
+              ❤️ Twój wpływ
+            </Text>
+
+            <Text style={styles.profileCardText}>
+              Dzięki Twoim wpłatom część środków
+              trafia co miesiąc do wybranego celu
+              społecznego.
+            </Text>
+
+            <View style={styles.profileImpact}>
+              <Text style={styles.profileImpactNumber}>
+                {(totalPaid / 2)
+                  .toFixed(2)
+                  .replace('.', ',')}{' '}
+                zł
+              </Text>
+
+              <Text style={styles.profileImpactLabel}>
+                przekazanych na pomoc
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.profileCard}>
+            <Text style={styles.profileCardTitle}>
+              🪑 Ostatnia aktywność
+            </Text>
+
+            <View style={styles.activityRow}>
+              <Text style={styles.activityEmoji}>
+                🪑
+              </Text>
+
+              <View>
+                <Text style={styles.activityTitle}>
+                  Skorzystanie z SIADAJ
+                </Text>
+
+                <Text style={styles.activityDate}>
+                  Ostatnia wpłata
+                </Text>
+              </View>
+
+              <Text style={styles.activityAmount}>
+                - 5,00 zł
+              </Text>
+            </View>
+
+            <View style={styles.activityRow}>
+              <Text style={styles.activityEmoji}>
+                ❤️
+              </Text>
+
+              <View>
+                <Text style={styles.activityTitle}>
+                  Wsparcie społeczne
+                </Text>
+
+                <Text style={styles.activityDate}>
+                  50% każdej wpłaty
+                </Text>
+              </View>
+
+              <Text style={styles.activityAmount}>
+                + pomoc
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.profileCard}>
+            <Text style={styles.profileCardTitle}>
+              🏆 Mały fakt
+            </Text>
+
+            <Text style={styles.profileCardText}>
+              Każde użycie SIADAJ to nie tylko
+              chwila odpoczynku. To także mała
+              cegiełka w większej sprawie.
+            </Text>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  /*
+   * =========================
+   * MAPA
+   * =========================
+   */
+
+  if (screen === 'map') {
+    return (
+      <View style={styles.screen}>
+        <Text style={styles.mapTitle}>
+          📍 Znajdź ławkę
+        </Text>
+
+        <Text style={styles.mapSubtitle}>
+          Kliknij ławkę, aby zobaczyć dostępne miejsca
+        </Text>
+
+        <View style={styles.map}>
+          <View style={styles.roadHorizontal} />
+          <View style={styles.roadVertical} />
+
+          {benches.map((bench) => (
+            <TouchableOpacity
+              key={bench.id}
+              onPress={() => openBench(bench)}
+              style={[
+                styles.mapBench,
+                {
+                  backgroundColor:
+                    getBenchColor(bench.free),
+                  left: `${bench.x}%`,
+                  top: `${bench.y}%`,
+                },
+              ]}
+            >
+              <Text style={styles.mapBenchText}>
+                🪑
+              </Text>
+
+              <Text style={styles.mapBenchNumber}>
+                {bench.free}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+          <View style={styles.userLocation}>
+            <Text style={styles.locationText}>
+              ●
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: '#7BC96F' },
+              ]}
+            />
+            <Text>6–10 wolnych</Text>
+          </View>
+
+          <View style={styles.legendItem}>
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: '#F4B942' },
+              ]}
+            />
+            <Text>3–5 wolnych</Text>
+          </View>
+
+          <View style={styles.legendItem}>
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: '#E76F51' },
+              ]}
+            />
+            <Text>0–2 wolne</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setScreen('home')}
+        >
+          <Text style={styles.backButtonText}>
+            ← WRÓĆ
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  /*
+   * =========================
+   * EKRAN GŁÓWNY
+   * =========================
+   */
+
+  return (
+    <View style={styles.container}>
+      <Text style={[styles.cloud, styles.cloud1]}>
+        ☁️
+      </Text>
+
+      <Text style={[styles.cloud, styles.cloud2]}>
+        ☁️
+      </Text>
+
+      <Text style={[styles.cloud, styles.cloud3]}>
+        ☁️
+      </Text>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.homeContent}
+      >
+        <Text style={styles.logo}>
+          SIADAJ
+        </Text>
+
+        <Text style={styles.subtitle}>
+          Usiądź. Odpocznij. Pomóż.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.mainButton}
+          onPress={() => setScreen('map')}
+        >
+          <Text style={styles.mainButtonText}>
+            📍 ZNAJDŹ MNIE
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.homePool}>
+          <Text style={styles.homePoolSmall}>
+            ❤️ WSPÓLNA PULA POMOCY
+          </Text>
+
+          <Text style={styles.homePoolAmount}>
+            {poolAmount.toLocaleString('pl-PL')} zł
+          </Text>
+
+          <Text style={styles.homePoolText}>
+            zebrane w tym miesiącu
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.homeMenuCard}
+          onPress={() => setScreen('help')}
+        >
+          <Text style={styles.homeMenuEmoji}>
+            ❤️
+          </Text>
+
+          <View style={styles.homeMenuContent}>
+            <Text style={styles.homeMenuTitle}>
+              POMAGAMY
+            </Text>
+
+            <Text style={styles.homeMenuText}>
+              Zobacz pulę, głosowanie i historię pomocy
+            </Text>
+          </View>
+
+          <Text style={styles.arrow}>
+            →
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.homeMenuCard}
+          onPress={() => setScreen('profile')}
+        >
+          <Text style={styles.homeMenuEmoji}>
+            👤
+          </Text>
+
+          <View style={styles.homeMenuContent}>
+            <Text style={styles.homeMenuTitle}>
+              PROFIL
+            </Text>
+
+            <Text style={styles.homeMenuText}>
+              Twoje wpłaty, miejsca i wpływ
+            </Text>
+          </View>
+
+          <Text style={styles.arrow}>
+            →
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.info}>
+          Każda wpłata pomaga budować kolejne ławki.
+        </Text>
+      </ScrollView>
+    </View>
+  );
+}
+
+/*
+ * =========================
+ * STYLE
+ * =========================
+ */
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#EAF4E3',
+  },
+
+  homeContent: {
+    alignItems: 'center',
+    padding: 28,
+    paddingTop: 100,
+    paddingBottom: 50,
+  },
+
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
+  },
+
+  logo: {
+    fontSize: 46,
+    fontWeight: '800',
+    color: '#222222',
+    letterSpacing: 4,
+    marginBottom: 8,
+  },
+
+  subtitle: {
+    fontSize: 17,
+    color: '#555555',
+    marginBottom: 38,
+  },
+
+  mainButton: {
+    width: '100%',
+    backgroundColor: '#222222',
+    paddingVertical: 19,
+    borderRadius: 18,
+    alignItems: 'center',
+  },
+
+  mainButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+
+  homePool: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 22,
+    alignItems: 'center',
+    marginTop: 18,
+    marginBottom: 14,
+  },
+
+  homePoolSmall: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#777777',
+  },
+
+  homePoolAmount: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#222222',
+    marginTop: 5,
+  },
+
+  homePoolText: {
+    color: '#777777',
+    marginTop: 3,
+  },
+
+  homeMenuCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  homeMenuEmoji: {
+    fontSize: 30,
+    marginRight: 15,
+  },
+
+  homeMenuContent: {
+    flex: 1,
+  },
+
+  homeMenuTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#222222',
+  },
+
+  homeMenuText: {
+    color: '#777777',
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+
+  arrow: {
+    fontSize: 25,
+    color: '#777777',
+  },
+
+  info: {
+    marginTop: 22,
+    fontSize: 13,
+    color: '#777777',
+    textAlign: 'center',
+  },
+
+  cloud: {
+    position: 'absolute',
+    fontSize: 55,
+    opacity: 0.65,
+  },
+
+  cloud1: {
+    top: 60,
+    left: 25,
+  },
+
+  cloud2: {
+    top: 125,
+    right: 20,
+    fontSize: 45,
+  },
+
+  cloud3: {
+    bottom: 70,
+    left: 45,
+    fontSize: 40,
+  },
+
+  screen: {
+    flex: 1,
+    backgroundColor: '#EAF4E3',
+    padding: 22,
+    paddingTop: 55,
+  },
+
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#222222',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+
+  sectionSubtitle: {
+    textAlign: 'center',
+    color: '#666666',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+
+  topBack: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#444444',
+    marginBottom: 20,
+  },
+
+  mapTitle: {
+    fontSize: 29,
+    fontWeight: '800',
+    color: '#222222',
+    textAlign: 'center',
+  },
+
+  mapSubtitle: {
+    textAlign: 'center',
+    color: '#666666',
+    marginTop: 5,
+    marginBottom: 18,
+  },
+
+  map: {
+    height: 450,
+    width: '100%',
+    backgroundColor: '#D8E8D2',
+    borderRadius: 25,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+
+  roadHorizontal: {
+    position: 'absolute',
+    width: '140%',
+    height: 55,
+    backgroundColor: '#F5F1E7',
+    top: 190,
+    left: '-20%',
+    transform: [{ rotate: '-8deg' }],
+  },
+
+  roadVertical: {
+    position: 'absolute',
+    width: 55,
+    height: '130%',
+    backgroundColor: '#F5F1E7',
+    left: 170,
+    top: '-15%',
+    transform: [{ rotate: '12deg' }],
+  },
+
+  mapBench: {
+    position: 'absolute',
+    width: 57,
+    height: 57,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    elevation: 5,
+  },
+
+  mapBenchText: {
+    fontSize: 23,
+  },
+
+  mapBenchNumber: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 4,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+
+  userLocation: {
+    position: 'absolute',
+    left: '47%',
+    top: '45%',
+    width: 25,
+    height: 25,
+    borderRadius: 15,
+    backgroundColor: '#222222',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+  },
+
+  locationText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  legendDot: {
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    marginRight: 5,
+  },
+
+  backButton: {
+    alignSelf: 'center',
+    marginTop: 18,
+    backgroundColor: '#222222',
+    paddingVertical: 14,
+    paddingHorizontal: 25,
+    borderRadius: 15,
+  },
+
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  availability: {
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 20,
+  },
+
+  greenText: {
+    color: '#3D8B35',
+    fontWeight: '700',
+  },
+
+  redText: {
+    color: '#C94B38',
+    fontWeight: '700',
+  },
+
+  chooseText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 15,
+  },
+
+  seatsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
+  },
+
+  seat: {
+    width: 145,
+    height: 70,
+    backgroundColor: '#BFE3B3',
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  occupiedSeat: {
+    backgroundColor: '#F0B5B5',
+  },
+
+  selectedSeat: {
+    backgroundColor: '#8BCB78',
+    borderWidth: 3,
+    borderColor: '#222222',
+  },
+
+  seatNumber: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#222222',
+  },
+
+  seatStatus: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#555555',
+    marginTop: 3,
+  },
+
+  selectionBox: {
+    backgroundColor: '#FFFFFF',
+    padding: 17,
+    borderRadius: 20,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+
+  selectionText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#222222',
+  },
+
+  priceText: {
+    fontSize: 13,
+    color: '#666666',
+    marginTop: 5,
+    marginBottom: 12,
+  },
+
+  paymentInfo: {
+    textAlign: 'center',
+    color: '#555555',
+    fontSize: 18,
+    marginBottom: 5,
+  },
+
+  minimumInfo: {
+    textAlign: 'center',
+    color: '#777777',
+    fontSize: 14,
+    marginBottom: 20,
+  },
+
+  paymentGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+
+  paymentTile: {
+    width: '48%',
+    height: 90,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+
+  paymentTileSelected: {
+    borderColor: '#222222',
+    backgroundColor: '#BFE3B3',
+  },
+
+  paymentTileNumber: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#222222',
+  },
+
+  paymentTileNumberSelected: {
+    color: '#222222',
+  },
+
+  customTile: {
+    width: '100%',
+    height: 65,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    marginBottom: 15,
+  },
+
+  customTileText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#333333',
+  },
+
+  amountContainer: {
+    width: '100%',
+    height: 65,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#D5D5D5',
+    marginBottom: 12,
+  },
+
+  amountInput: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#222222',
+    width: 180,
+    textAlign: 'right',
+    paddingVertical: 5,
+  },
+
+  currency: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#555555',
+    marginLeft: 8,
+  },
+
+  chosenAmountBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 15,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
+  chosenAmountLabel: {
+    fontSize: 12,
+    color: '#777777',
+  },
+
+  chosenAmount: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#222222',
+    marginTop: 3,
+  },
+
+  errorBox: {
+    backgroundColor: '#FFE1DD',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginBottom: 12,
+  },
+
+  errorText: {
+    color: '#C0392B',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
+  smallInfoBox: {
+    backgroundColor: '#DDEED8',
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 18,
+  },
+
+  smallInfo: {
+    textAlign: 'center',
+    color: '#555555',
+    lineHeight: 22,
+  },
+
+  payButton: {
+    width: '100%',
+    backgroundColor: '#222222',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+
+  payButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+
+  disabledButton: {
+    opacity: 0.45,
+  },
+
+  centerScreen: {
+    flex: 1,
+    backgroundColor: '#EAF4E3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
+  },
+
+  successEmoji: {
+    fontSize: 55,
+    marginBottom: 15,
+  },
+
+  activeEmoji: {
+    fontSize: 65,
+    marginBottom: 10,
+  },
+
+  successTitle: {
+    fontSize: 31,
+    fontWeight: '800',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+
+  successText: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#444444',
+    marginBottom: 5,
+  },
+
+  bigSeat: {
+    fontSize: 36,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginVertical: 15,
+  },
+
+  splitBox: {
+    backgroundColor: '#FFFFFF',
+    padding: 18,
+    borderRadius: 18,
+    marginTop: 20,
+    marginBottom: 25,
+    width: '100%',
+  },
+
+  splitTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+
+  splitText: {
+    textAlign: 'center',
+    color: '#555555',
+    marginTop: 5,
+  },
+
+  activeBox: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginVertical: 20,
+    alignItems: 'center',
+  },
+
+  activeBoxTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+
+  activeBoxText: {
+    textAlign: 'center',
+    color: '#666666',
+    marginTop: 5,
+    lineHeight: 20,
+  },
+
+  leaveButton: {
+    backgroundColor: '#222222',
+    paddingVertical: 17,
+    paddingHorizontal: 25,
+    borderRadius: 16,
+  },
+
+  leaveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+
+  countdownBox: {
+    alignItems: 'center',
+  },
+
+  countdownNumber: {
+    fontSize: 58,
+    fontWeight: '800',
+    color: '#222222',
+  },
+
+  countdownText: {
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+
+  cancelButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 25,
+  },
+
+  cancelButtonText: {
+    fontWeight: '800',
+    color: '#222222',
+  },
+
+  poolCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 24,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 25,
+  },
+
+  poolSmall: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#777777',
+  },
+
+  poolAmount: {
+    fontSize: 34,
+    fontWeight: '800',
+    marginVertical: 5,
+  },
+
+  poolDescription: {
+    color: '#777777',
+  },
+
+  sectionTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: '#222222',
+    marginBottom: 12,
+    marginTop: 5,
+  },
+
+  voteDescription: {
+    color: '#666666',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+
+  voteCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 15,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+
+  voteCardSelected: {
+    borderColor: '#222222',
+    backgroundColor: '#DDEED8',
+  },
+
+  voteEmoji: {
+    fontSize: 30,
+    marginRight: 13,
+  },
+
+  voteContent: {
+    flex: 1,
+  },
+
+  voteName: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+
+  votePercentage: {
+    color: '#777777',
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#AAAAAA',
+  },
+
+  radioSelected: {
+    backgroundColor: '#222222',
+    borderColor: '#222222',
+  },
+
+  voteButton: {
+    backgroundColor: '#222222',
+    borderRadius: 16,
+    paddingVertical: 17,
+    alignItems: 'center',
+    marginTop: 5,
+    marginBottom: 30,
+  },
+
+  voteButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+
+  votedBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 25,
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+
+  votedEmoji: {
+    fontSize: 40,
+  },
+
+  votedTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginVertical: 8,
+  },
+
+  votedText: {
+    textAlign: 'center',
+    color: '#666666',
+    lineHeight: 20,
+    marginTop: 5,
+  },
+
+  historyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  historyEmoji: {
+    fontSize: 32,
+    marginRight: 15,
+  },
+
+  historyContent: {
+    flex: 1,
+  },
+
+  historyMonth: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  historyCause: {
+    color: '#666666',
+    marginTop: 3,
+  },
+
+  historyAmount: {
+    color: '#3D8B35',
+    fontWeight: '700',
+    marginTop: 4,
+  },
+
+  transparencyBox: {
+    backgroundColor: '#DDEED8',
+    borderRadius: 18,
+    padding: 18,
+    marginTop: 15,
+  },
+
+  transparencyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+
+  transparencyText: {
+    color: '#555555',
+    lineHeight: 20,
+    marginTop: 5,
+  },
+
+  profileIcon: {
+    fontSize: 55,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+
+  profileSubtitle: {
+    textAlign: 'center',
+    color: '#777777',
+    marginBottom: 22,
+  },
+
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+
+  statCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    width: '48%',
+    padding: 20,
+    alignItems: 'center',
+  },
+
+  statNumber: {
+    fontSize: 25,
+    fontWeight: '800',
+  },
+
+  statLabel: {
+    color: '#777777',
+    marginTop: 4,
+  },
+
+  profileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 12,
+  },
+
+  profileCardTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+
+  profileCardText: {
+    color: '#666666',
+    lineHeight: 21,
+  },
+
+  profileImpact: {
+    backgroundColor: '#DDEED8',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+
+  profileImpactNumber: {
+    fontSize: 27,
+    fontWeight: '800',
+  },
+
+  profileImpactLabel: {
+    color: '#666666',
+    marginTop: 3,
+  },
+
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+  },
+
+  activityEmoji: {
+    fontSize: 25,
+    marginRight: 12,
+  },
+
+  activityTitle: {
+    fontWeight: '700',
+  },
+
+  activityDate: {
+    color: '#888888',
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  activityAmount: {
+    marginLeft: 'auto',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+});
