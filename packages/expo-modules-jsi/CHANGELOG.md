@@ -1,5 +1,11 @@
 # Changelog
 
+## 58.0.9
+
+### Patch Changes
+
+- [iOS] Speed up `JavaScriptObject.defineProperty` by looking up `Object.defineProperty` once per runtime and building the descriptor in C++. ([#51004](https://github.com/expo/expo/pull/51004) by [@tsapeta](https://github.com/tsapeta))
+
 ## 58.0.8
 
 ### Patch Changes
